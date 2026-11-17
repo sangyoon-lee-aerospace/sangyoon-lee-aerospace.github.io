@@ -1,0 +1,224 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { researchAreas } from '../data/research';
+import { Image } from 'astro:assets';
+import { publications } from '../data/publications';
+import { projectList, projectPeriod, roleLabels } from '../data/projects';
+import { parsePath, t, ui } from '../i18n/ui';
+
+const { lang } = parsePath(Astro.url.pathname);
+const publicationById = (id: string) => publications.find((p) => p.id === id);
+---
+
+<BaseLayout title={t(ui.navResearch, lang)} description={t(ui.researchDescription, lang)}>
+  <div class="container">
+    <header class="page-header">
+      <p class="eyebrow">{t(ui.navResearch, lang)}</p>
+      <h1>{t(ui.researchAreas, lang)}</h1>
+      <nav aria-label={t(ui.researchAreas, lang)} class="area-toc">
+        <ul>
+          {researchAreas.map((a) => (
+            <li><a href={`#${a.id}`}>{t(a.title, lang)}</a></li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+
+    {researchAreas.map((area, i) => (
+      <section class="research-area" id={area.id} aria-labelledby={`${area.id}-title`}>
+        <div class="research-area__head">
+          <p class="research-area__index" aria-hidden="true">{String(i + 1).padStart(2, '0')}</p>
+          <h2 id={`${area.id}-title`}>{t(area.title, lang)}</h2>
+          <p class="research-area__summary">{t(area.summary, lang)}</p>
+        </div>
+        {area.topics.map((topic) => (
+          <article class="topic" id={topic.id} aria-labelledby={`${topic.id}-title`}>
+            <div class="topic__text">
+              <h3 id={`${topic.id}-title`}>{t(topic.title, lang)}</h3>
+              <p>{t(topic.summary, lang)}</p>
+            </div>
+            <div class:list={['gallery', { 'gallery--single': topic.images.length === 1 }]}>
+              {topic.images.map((img) => {
+                const pub = img.source ? publicationById(img.source) : undefined;
+                return (
+                  <figure class="gallery__item">
+                    <Image
+                      src={img.src}
+                      alt={t(img.alt, lang)}
+                      widths={[320, 480, 720, 1000]}
+                      sizes={topic.images.length === 1 ? '(min-width: 56rem) 40rem, 100vw' : '(min-width: 56rem) 20rem, 50vw'}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                    />
+                    <figcaption>
+                      {t(img.caption, lang)}
+                      {pub && (
+                        <span class="gallery__source">
+                          {' '}({pub.venue}, {pub.year}{img.licence && <>, {img.licence}</>})
+                        </span>
+                      )}
+                      {!pub && img.sourceNote && (
+                        <span class="gallery__source"> ({t(img.sourceNote, lang)})</span>
+                      )}
+                    </figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          </article>
+        ))}
+      </section>
+    ))}
+
+    {projectList.length > 0 && (
+      <section class="projects" id="projects" aria-labelledby="projects-title">
+        <h2 id="projects-title">{t(ui.projects, lang)}</h2>
+        <ul class="projects__list">
+          {projectList.map((p) => (
+            <li class="project">
+              <p class="project__title">{t(p.title, lang)}</p>
+              <p class="project__meta">
+                <span class="project__period">{projectPeriod(p)}</span>
+                {p.sponsor && <> · {t(p.sponsor, lang)}</>}
+                {p.role && <> · {t(roleLabels[p.role], lang)}</>}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .area-toc ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-5);
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .research-area {
+    display: grid;
+    gap: var(--space-5);
+    padding-bottom: var(--space-7);
+    margin-bottom: var(--space-7);
+    border-bottom: 1px solid var(--color-border);
+    scroll-margin-top: var(--space-5);
+  }
+
+  .research-area:last-of-type {
+    border-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .research-area__head {
+    max-width: 48rem;
+  }
+
+  .research-area__index {
+    margin: 0 0 var(--space-2);
+    color: var(--color-accent);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+  }
+
+  .research-area__summary {
+    margin-top: var(--space-4);
+  }
+
+  .topic {
+    display: grid;
+    gap: var(--space-4);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    scroll-margin-top: var(--space-5);
+  }
+
+  .topic h3 {
+    font-size: 1.125rem;
+  }
+
+  .topic__text p {
+    margin-top: var(--space-2);
+  }
+
+  @media (min-width: 56rem) {
+    .topic {
+      grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+      gap: var(--space-7);
+      align-items: start;
+    }
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .gallery--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gallery__item {
+    margin: 0;
+  }
+
+  .gallery__item img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 28rem;
+    object-fit: contain;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .gallery figcaption {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+
+  .gallery__source {
+    font-style: italic;
+  }
+
+  .projects {
+    padding-top: var(--space-7);
+    margin-top: var(--space-7);
+    border-top: 1px solid var(--color-border);
+    scroll-margin-top: var(--space-5);
+  }
+
+  .projects__list {
+    list-style: none;
+    margin-top: var(--space-3);
+  }
+
+  .project {
+    padding-block: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .project__title {
+    color: var(--color-heading);
+    font-weight: 600;
+  }
+
+  .project__meta {
+    margin-top: var(--space-1, 0.25rem);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+  }
+
+  .project__period {
+    font-variant-numeric: tabular-nums;
+  }
+</style>

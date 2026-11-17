@@ -1,0 +1,172 @@
+---
+import { nav, siteTitle } from '../data/site';
+import { affiliationLine } from '../data/profile';
+import { languages, localePath, parsePath, t, ui } from '../i18n/ui';
+import type { Lang } from '../i18n/ui';
+import ExternalIcon from './ExternalIcon.astro';
+
+interface Props {
+  /** Show the language switch (false on single-language pages). */
+  translated?: boolean;
+}
+
+const { translated = true } = Astro.props;
+const { lang, path } = parsePath(Astro.url.pathname);
+const current = path.replace(/\/?$/, '/');
+const isCurrent = (p?: string) => (p === undefined ? false : p === '/' ? current === '/' : current.startsWith(p));
+
+const otherLang: Lang = lang === 'en' ? 'ko' : 'en';
+const otherHref = localePath(translated ? current : '/', otherLang);
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="site-title" href={localePath('/', lang)}>
+      <span class="site-title__name">{siteTitle(lang)}</span>
+      <span class="site-title__affiliation">{affiliationLine(lang)}</span>
+    </a>
+    <div class="site-header__right">
+      <nav aria-label={t(ui.mainNav, lang)}>
+        <ul class="nav-list">
+          {nav(lang).map((item) => (
+            <li>
+              {item.external ? (
+                <a href={item.href} rel="noopener" target="_blank">
+                  {item.label}
+                  <ExternalIcon />
+                  <span class="visually-hidden">{t(ui.externalHint, lang)}</span>
+                </a>
+              ) : (
+                <a href={item.href} aria-current={isCurrent(item.path) ? 'page' : undefined}>
+                  {item.label}
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <a
+        class="lang-switch"
+        href={otherHref}
+        hreflang={languages[otherLang].htmlLang}
+        lang={languages[otherLang].htmlLang}
+        title={t(ui.switchTo, lang)}
+      >
+        {languages[otherLang].label}
+      </a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .site-header__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-6);
+    padding-block: var(--space-4);
+  }
+
+  .site-header__right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-5);
+  }
+
+  .site-title {
+    display: flex;
+    flex-direction: column;
+    color: var(--color-heading);
+    text-decoration: none;
+    line-height: 1.25;
+  }
+
+  .site-title__name {
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .site-title__affiliation {
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    letter-spacing: 0.02em;
+  }
+
+  .nav-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    list-style: none;
+  }
+
+  .nav-list a {
+    display: inline-block;
+    padding-block: var(--space-2);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+  }
+
+  .nav-list a:hover {
+    color: var(--color-heading);
+    border-bottom-color: var(--color-border-strong);
+  }
+
+  .nav-list a[aria-current='page'] {
+    color: var(--color-heading);
+    font-weight: 600;
+    border-bottom-color: var(--color-accent);
+  }
+
+  .lang-switch {
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    color: var(--color-heading);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .lang-switch:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 40rem) {
+    .site-header__inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-1);
+    }
+
+    .site-title {
+      align-self: stretch;
+    }
+
+    .site-title__affiliation {
+      display: none;
+    }
+
+    .site-header__right {
+      width: 100%;
+      justify-content: space-between;
+      gap: 0 var(--space-4);
+    }
+
+    .nav-list {
+      gap: 0 var(--space-4);
+    }
+  }
+</style>

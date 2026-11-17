@@ -1,0 +1,129 @@
+---
+import type { Publication } from '../data/publications';
+import { SELF_NAMES } from '../data/publications';
+import { parsePath, t, ui } from '../i18n/ui';
+
+interface Props {
+  pub: Publication;
+  /** Show the year in the details line (off when the list is grouped by year). */
+  showYear?: boolean;
+}
+
+const { pub, showYear = true } = Astro.props;
+const { lang } = parsePath(Astro.url.pathname);
+
+const details = [
+  pub.volume && (pub.issue ? `${pub.volume}(${pub.issue})` : pub.volume),
+  pub.pages ? pub.pages : pub.articleNumber ? `${t(ui.article, lang)} ${pub.articleNumber}` : undefined,
+].filter(Boolean);
+
+const link = pub.doi ? `https://doi.org/${pub.doi}` : pub.url;
+
+// On the Korean pages, a Korean paper shows its Korean title first.
+const showOriginalFirst = pub.originalTitle?.lang === lang;
+const main = showOriginalFirst
+  ? { text: pub.originalTitle!.text, lang: pub.originalTitle!.lang }
+  : { text: pub.title, lang: pub.originalTitle ? 'en' : (pub.language ?? 'en') };
+const secondary = pub.originalTitle
+  ? showOriginalFirst
+    ? { text: pub.title, lang: 'en' }
+    : { text: pub.originalTitle.text, lang: pub.originalTitle.lang }
+  : undefined;
+---
+
+<article class="pub" id={`pub-${pub.id}`}>
+  <h3 class="pub__title" lang={main.lang}>
+    {link ? <a href={link} rel="noopener">{main.text}</a> : main.text}
+  </h3>
+  {secondary && <p class="pub__original" lang={secondary.lang}>{secondary.text}</p>}
+  {pub.authors.length > 0 && (
+    <p class="pub__authors" lang="en">
+      {pub.authors.map((name, i) => (
+        <>
+          {SELF_NAMES.includes(name) ? <strong>{name}</strong> : name}
+          {i < pub.authors.length - 1 ? ', ' : ''}
+        </>
+      ))}
+    </p>
+  )}
+  <p class="pub__venue">
+    <cite lang="en">{pub.venue}</cite>
+    {details.length > 0 && <span>, {details.join(', ')}</span>}
+    {showYear && <span> ({pub.year})</span>}
+    {pub.status && <span class="pub__status"> · {t(pub.status, lang)}</span>}
+    {pub.language === 'ko' && <span class="pub__lang"> · {t(ui.inKorean, lang)}</span>}
+  </p>
+  {pub.doi && (
+    <p class="pub__links">
+      <a href={`https://doi.org/${pub.doi}`} rel="noopener">
+        <span class="pub__doi-label">DOI</span> {pub.doi}
+      </a>
+    </p>
+  )}
+</article>
+
+<style>
+  .pub {
+    padding-block: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .pub:first-child {
+    padding-top: 0;
+  }
+
+  .pub:last-child {
+    border-bottom: 0;
+  }
+
+  .pub__title {
+    font-size: 1.0625rem;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  .pub__title a {
+    color: var(--color-heading);
+    text-decoration: none;
+  }
+
+  .pub__title a:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  .pub p {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+  }
+
+  .pub__original {
+    color: var(--color-muted);
+  }
+
+  .pub__authors strong {
+    color: var(--color-heading);
+    font-weight: 600;
+  }
+
+  .pub__venue {
+    color: var(--color-muted);
+  }
+
+  .pub__venue cite {
+    font-style: italic;
+    color: var(--color-text);
+  }
+
+  .pub__links a {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    word-break: break-all;
+  }
+
+  .pub__doi-label {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+</style>

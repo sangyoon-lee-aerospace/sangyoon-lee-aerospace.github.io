@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { t, ui } from '../i18n/ui';
+---
+
+<BaseLayout title={t(ui.notFoundTitle, 'ko')} description={t(ui.notFoundText, 'ko')} noindex translated={false}>
+  <div class="container">
+    <header class="page-header">
+      <p class="eyebrow">404</p>
+      <h1>{t(ui.notFoundTitle, 'ko')}</h1>
+      <p>{t(ui.notFoundText, 'ko')}</p>
+      <p lang="en">{t(ui.notFoundText, 'en')}</p>
+    </header>
+    <p>
+      <a class="text-link-arrow" href="/">{t(ui.backHome, 'ko')}</a>
+      <span aria-hidden="true"> · </span>
+      <a class="text-link-arrow" href="/en/" lang="en">{t(ui.backHome, 'en')}</a>
+    </p>
+  </div>
+</BaseLayout>

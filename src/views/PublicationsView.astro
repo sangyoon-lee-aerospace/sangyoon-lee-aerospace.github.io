@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PublicationItem from '../components/PublicationItem.astro';
+import { groupByYear, publicationSections } from '../data/publications';
+import { parsePath, t, ui } from '../i18n/ui';
+
+const { lang } = parsePath(Astro.url.pathname);
+const sections = publicationSections.filter((s) => s.items.length > 0);
+---
+
+<BaseLayout title={t(ui.navPublications, lang)} description={t(ui.publicationsDescription, lang)}>
+  <div class="container">
+    <header class="page-header">
+      <p class="eyebrow">{t(ui.navPublications, lang)}</p>
+      <h1>{t(ui.publications, lang)}</h1>
+      <nav aria-label={t(ui.sectionsNav, lang)} class="pub-toc">
+        <ul>
+          {sections.map((s) => (
+            <li><a href={`#${s.id}`}>{t(s.title, lang)} <span class="muted">({s.items.length})</span></a></li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+
+    {sections.map((s) => (
+      <section class="section" id={s.id} aria-labelledby={`${s.id}-title`}>
+        <h2 id={`${s.id}-title`}>{t(s.title, lang)}</h2>
+        {groupByYear(s.items).map(([year, items]) => (
+          <div class="year-group">
+            <h3 class="year-group__year">{year}</h3>
+            <div class="prose-wide">
+              {items.map((pub) => <PublicationItem pub={pub} showYear={false} />)}
+            </div>
+          </div>
+        ))}
+      </section>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .pub-toc ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-5);
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .prose-wide {
+    max-width: 52rem;
+  }
+
+  .section {
+    scroll-margin-top: var(--space-5);
+  }
+
+  .year-group {
+    display: grid;
+    gap: var(--space-2) var(--space-5);
+    margin-bottom: var(--space-5);
+  }
+
+  @media (min-width: 44rem) {
+    .year-group {
+      grid-template-columns: 5rem minmax(0, 1fr);
+    }
+  }
+
+  .year-group__year {
+    color: var(--color-accent);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    padding-top: 0.1em;
+  }
+</style>

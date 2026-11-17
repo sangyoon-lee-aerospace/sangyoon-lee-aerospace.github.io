@@ -1,0 +1,283 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PublicationItem from '../components/PublicationItem.astro';
+import ProfileLinks from '../components/ProfileLinks.astro';
+import CvEntryList from '../components/CvEntryList.astro';
+import { affiliationLine, profile, secondaryName } from '../data/profile';
+import { publications, sortByYear } from '../data/publications';
+import { researchAreas } from '../data/research';
+import { cvSections } from '../data/cv';
+import { localePath, parsePath, t, ui } from '../i18n/ui';
+
+const { lang } = parsePath(Astro.url.pathname);
+const RECENT_COUNT = 5;
+const allPublications = sortByYear(publications);
+const recentPublications = allPublications.slice(0, RECENT_COUNT);
+const experience = cvSections.find((s) => s.id === 'experience')?.entries ?? [];
+const education = cvSections.find((s) => s.id === 'education')?.entries ?? [];
+const altName = secondaryName(lang);
+const contactHeading = profile.profiles.length > 0 ? ui.contactProfiles : ui.contact;
+---
+
+<BaseLayout>
+  <section class="hero" aria-labelledby="hero-name">
+    <div class="container hero__grid">
+      {profile.photo && (
+        <Image
+          class="hero__photo"
+          src={profile.photo}
+          alt={t(ui.photoAlt, lang)}
+          width={profile.photo.width}
+          loading="eager"
+        />
+      )}
+      <div class="hero__text">
+        <h1 id="hero-name">
+          {t(profile.name, lang)}
+          <span class="hero__alt-name" lang={altName.lang}>{altName.text}</span>
+        </h1>
+        <p class="hero__position">
+          {lang === 'ko' ? (
+            <>{affiliationLine(lang)}<br />{t(profile.position, lang)}</>
+          ) : (
+            <>{t(profile.position, lang)}<br />{affiliationLine(lang)}</>
+          )}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="container home-grid">
+    <aside class="home-aside" aria-labelledby="contact-heading">
+      <h2 id="contact-heading" class="eyebrow">{t(contactHeading, lang)}</h2>
+      <ProfileLinks />
+    </aside>
+
+    <div class="home-main">
+      <section class="section" aria-labelledby="about-heading">
+        <h2 id="about-heading">{t(ui.about, lang)}</h2>
+        <div class="prose">
+          {profile.bio.map((para) => <p>{t(para, lang)}</p>)}
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="areas-heading">
+        <h2 id="areas-heading">{t(ui.researchAreas, lang)}</h2>
+        <ul class="areas">
+          {researchAreas.map((area) => (
+            <li class="area">
+              <a class="area__link" href={`${localePath('/research/', lang)}#${area.id}`}>
+                {area.cover ? (
+                  <Image
+                    class="area__image"
+                    src={area.cover.src}
+                    alt=""
+                    widths={[320, 480, 640]}
+                    sizes="(min-width: 72rem) 12rem, (min-width: 30rem) 45vw, 100vw"
+                    loading="lazy"
+                    style={area.coverPosition ? `object-position: ${area.coverPosition}` : undefined}
+                  />
+                ) : (
+                  <div class="area__image area__image--empty" aria-hidden="true" />
+                )}
+                <h3>{t(area.title, lang)}</h3>
+              </a>
+              <p class="area__short">{t(area.short, lang)}</p>
+            </li>
+          ))}
+        </ul>
+        <p class="more">
+          <a class="text-link-arrow" href={localePath('/research/', lang)}>{t(ui.moreResearch, lang)}</a>
+        </p>
+      </section>
+
+      {(experience.length > 0 || education.length > 0) && (
+        <section class="section" aria-labelledby="background-heading">
+          <h2 id="background-heading">{t(ui.academicBackground, lang)}</h2>
+          {experience.length > 0 && <CvEntryList entries={experience} compact />}
+          {education.length > 0 && (
+            <div class="background-edu">
+              <h3 class="eyebrow">{t(ui.education, lang)}</h3>
+              <CvEntryList entries={education} compact />
+            </div>
+          )}
+        </section>
+      )}
+      {allPublications.length > 0 && (
+        <section class="section" aria-labelledby="publications-heading">
+          <h2 id="publications-heading">
+            {t(ui.publications, lang)} <span class="count">({allPublications.length})</span>
+          </h2>
+          <div>
+            {recentPublications.map((pub) => <PublicationItem pub={pub} />)}
+          </div>
+          <p class="more">
+            <a class="text-link-arrow" href={localePath('/publications/', lang)}>
+              {t(ui.allPublications, lang)}
+            </a>
+          </p>
+        </section>
+      )}
+
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: var(--space-8) var(--space-7);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-7);
+  }
+
+  .hero__grid {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .hero__photo {
+    width: 112px;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  @media (min-width: 44rem) {
+    .hero__grid {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: var(--space-7);
+    }
+
+    .hero__photo {
+      width: 150px;
+      margin-top: var(--space-2);
+    }
+  }
+
+  .hero h1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-4);
+    font-size: clamp(2.25rem, 1.6rem + 3vw, 3.5rem);
+    letter-spacing: -0.015em;
+  }
+
+  .hero__alt-name {
+    color: var(--color-muted);
+    font-family: var(--font-sans);
+    font-size: 0.42em;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  .hero__position {
+    margin-top: var(--space-4);
+    color: var(--color-heading);
+    font-size: var(--text-lg);
+    line-height: 1.45;
+  }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .home-aside {
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  @media (min-width: 56rem) {
+    .home-grid {
+      grid-template-columns: 15rem minmax(0, 1fr);
+      gap: var(--space-8);
+    }
+
+    .home-aside {
+      position: sticky;
+      top: var(--space-5);
+      align-self: start;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+  }
+
+  .areas {
+    list-style: none;
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 30rem) {
+    .areas {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .areas {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+  }
+
+  .area__link {
+    display: block;
+    color: var(--color-heading);
+    text-decoration: none;
+  }
+
+  .area__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .area__image--empty {
+    background: var(--color-accent-soft);
+  }
+
+  .area h3 {
+    margin-top: var(--space-3);
+    font-size: 1.0625rem;
+  }
+
+  .area__link:hover h3,
+  .area__link:focus-visible h3 {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  .area__short {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+  }
+
+  .more {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .count {
+    color: var(--color-muted);
+    font-family: var(--font-sans);
+    font-size: 0.6em;
+    font-weight: 400;
+  }
+
+  .background-edu {
+    margin-top: var(--space-5);
+  }
+</style>

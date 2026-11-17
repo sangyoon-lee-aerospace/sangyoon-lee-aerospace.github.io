@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { publishedCourses, teachingIntro } from '../data/teaching';
+import { isPagePublic } from '../data/site';
+import { parsePath, t, ui } from '../i18n/ui';
+
+const { lang } = parsePath(Astro.url.pathname);
+const isPublic = isPagePublic('/teaching/');
+const levels = [
+  { id: 'undergraduate', title: ui.undergraduate },
+  { id: 'graduate', title: ui.graduate },
+] as const;
+---
+
+<BaseLayout title={t(ui.navTeaching, lang)} description={t(ui.teachingDescription, lang)} noindex={!isPublic}>
+  <div class="container">
+    <header class="page-header">
+      <p class="eyebrow">{t(ui.navTeaching, lang)}</p>
+      <h1>{t(ui.navTeaching, lang)}</h1>
+      {publishedCourses.length === 0 && <p>{t(teachingIntro, lang)}</p>}
+    </header>
+
+    {levels.map((level) => {
+      const items = publishedCourses.filter((c) => c.level === level.id);
+      return items.length > 0 ? (
+        <section class="section" aria-labelledby={`${level.id}-title`}>
+          <h2 id={`${level.id}-title`}>{t(level.title, lang)}</h2>
+          <ul class="courses">
+            {items.map((c) => (
+              <li class="course">
+                <h3>
+                  {c.code && <span class="course__code">{c.code}</span>}
+                  {t(c.title, lang)}
+                </h3>
+                {c.terms && c.terms.length > 0 && <p class="muted">{c.terms.map((x) => t(x, lang)).join(', ')}</p>}
+                {c.description && <p>{t(c.description, lang)}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null;
+    })}
+  </div>
+</BaseLayout>
+
+<style>
+  .courses {
+    list-style: none;
+    display: grid;
+    gap: var(--space-5);
+    max-width: var(--width-prose);
+  }
+
+  .course h3 {
+    font-size: 1.125rem;
+  }
+
+  .course__code {
+    margin-right: var(--space-2);
+    color: var(--color-accent);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .course p {
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+  }
+</style>

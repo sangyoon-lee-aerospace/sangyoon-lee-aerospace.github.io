@@ -1,0 +1,84 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { siteDescription, siteTitle } from '../data/site';
+import { affiliationLine, profile } from '../data/profile';
+import { defaultLang, languages, localePath, parsePath, t, ui } from '../i18n/ui';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  /** Page title; the site name is appended. Omit on the home page. */
+  title?: string;
+  description?: string;
+  /** Exclude the page from search engines (e.g. 404, unpublished pages). */
+  noindex?: boolean;
+  /** Set false for pages that exist in one language only (e.g. 404). */
+  translated?: boolean;
+}
+
+const { lang, path } = parsePath(Astro.url.pathname);
+const { title, description = siteDescription(lang), noindex = false, translated = true } = Astro.props;
+const name = siteTitle(lang);
+const fullTitle = title ? `${title} | ${name}` : `${name} — ${t(profile.position, lang)}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const alternates = (Object.keys(languages) as Lang[]).map((l) => ({
+  lang: l,
+  href: new URL(localePath(path, l), Astro.site).href,
+}));
+
+// Structured data for the person (schema.org); only verified fields.
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: profile.name.en,
+  alternateName: profile.name.ko,
+  jobTitle: profile.position.en,
+  affiliation: {
+    '@type': 'CollegeOrUniversity',
+    name: profile.affiliation.institution.en,
+    department: { '@type': 'Organization', name: profile.affiliation.department.en },
+  },
+  description: affiliationLine('en'),
+  url: new URL('/', Astro.site).href,
+  ...(profile.profiles.length > 0 ? { sameAs: profile.profiles.map((p) => p.url) } : {}),
+};
+---
+
+<!doctype html>
+<html lang={languages[lang].htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {translated && alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
+    {translated && (
+      <link rel="alternate" hreflang="x-default" href={new URL(localePath(path, defaultLang), Astro.site).href} />
+    )}
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#fbfaf7" />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={languages[lang].ogLocale} />
+    <meta name="twitter:card" content="summary" />
+
+    {path === '/' && <script type="application/ld+json" set:html={JSON.stringify(personLd)} />}
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t(ui.skip, lang)}</a>
+    <Header translated={translated} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

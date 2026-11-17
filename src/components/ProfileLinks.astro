@@ -1,0 +1,70 @@
+---
+import { profile } from '../data/profile';
+import { parsePath, t, ui } from '../i18n/ui';
+import ExternalIcon from './ExternalIcon.astro';
+
+const { lang } = parsePath(Astro.url.pathname);
+---
+
+<ul class="profile-links">
+  {profile.contact.email && (
+    <li>
+      <span class="profile-links__label">{t(ui.email, lang)}</span>
+      <a href={`mailto:${profile.contact.email}`}>{profile.contact.email}</a>
+    </li>
+  )}
+  {profile.contact.address && (
+    <li>
+      <span class="profile-links__label">{t(ui.office, lang)}</span>
+      <address class="profile-links__address">{t(profile.contact.address, lang)}</address>
+    </li>
+  )}
+  {profile.profiles.map((p) => (
+    <li>
+      <span class="profile-links__label">{t(p.label, lang)}</span>
+      <a href={p.url} rel="noopener">
+        {p.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+      </a>
+    </li>
+  ))}
+  {profile.lab && (
+    <li>
+      <span class="profile-links__label">{t(ui.laboratory, lang)}</span>
+      <a href={profile.lab.url} rel="noopener" target="_blank">
+        {t(profile.lab.name, lang)}
+        <ExternalIcon />
+        <span class="visually-hidden">{t(ui.newTabHint, lang)}</span>
+      </a>
+    </li>
+  )}
+</ul>
+
+<style>
+  .profile-links {
+    list-style: none;
+    display: grid;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .profile-links li {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .profile-links__label {
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .profile-links__address {
+    font-style: normal;
+  }
+
+  .profile-links a {
+    word-break: break-word;
+  }
+</style>
